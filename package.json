@@ -1,0 +1,17 @@
+{
+  "name": "curalink-medical-assistant",
+  "version": "1.0.0",
+  "description": "Curalink AI Medical Research Assistant prototype (MERN + Ollama)",
+  "main": "index.js",
+  "scripts": {
+    "dev:backend": "npm --prefix backend run dev",
+    "dev:frontend": "npm --prefix frontend run dev",
+    "build": "npm --prefix frontend run build",
+    "start": "npm --prefix backend run start",
+    "test": "echo \"No tests configured\""
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs"
+}
