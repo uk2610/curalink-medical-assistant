@@ -13,7 +13,7 @@ const retrievalCache = createTtlCache({
 });
 
 function isDemoMode() {
-  return String(process.env.DEMO_MODE || "false").toLowerCase() === "true";
+  return String(process.env.DEMO_MODE || "false").trim().toLowerCase() === "true";
 }
 
 function withDemoLimit(value, demoLimit, demoMode) {

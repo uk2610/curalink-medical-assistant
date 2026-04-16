@@ -1,49 +1,37 @@
 require("dotenv").config();
 
-const express = require("express");
-const cors = require("cors");
-const helmet = require("helmet");
-const morgan = require("morgan");
 const mongoose = require("mongoose");
-
-const chatRoutes = require("./routes/chatRoutes");
-const researchRoutes = require("./routes/researchRoutes");
-
-const app = express();
-
-app.use(helmet());
-app.use(cors({ origin: process.env.CORS_ORIGIN?.split(",") || "*" }));
-app.use(express.json({ limit: "2mb" }));
-app.use(morgan("dev"));
-
-app.get("/api/health", (_req, res) => {
-  res.json({ status: "ok", service: "curalink-backend", timestamp: new Date().toISOString() });
-});
-
-app.use("/api/research", researchRoutes);
-app.use("/api/chat", chatRoutes);
-
-app.use((err, _req, res, _next) => {
-  // Unified error response for client-friendly handling.
-  console.error(err);
-  res.status(err.status || 500).json({
-    error: err.message || "Unexpected server error"
-  });
-});
+const { app } = require("./app");
 
 const PORT = Number(process.env.PORT || 5000);
 const MONGO_URI = process.env.MONGO_URI;
-const DEMO_MODE = String(process.env.DEMO_MODE || "false").toLowerCase() === "true";
+const DEMO_MODE = String(process.env.DEMO_MODE || "false").trim().toLowerCase() === "true";
 
-async function start() {
+async function connectDatabase() {
   if (!MONGO_URI) {
-    throw new Error("MONGO_URI is required in .env");
+    process.env.DISABLE_DB = "true";
+    console.warn("MONGO_URI not configured. Running without conversation persistence.");
+    return false;
   }
 
-  await mongoose.connect(MONGO_URI);
+  try {
+    await mongoose.connect(MONGO_URI);
+    process.env.DISABLE_DB = "false";
+    return true;
+  } catch (error) {
+    process.env.DISABLE_DB = "true";
+    console.warn("MongoDB connection failed. Running without persistence.", error.message);
+    return false;
+  }
+}
+
+async function start() {
+  const dbConnected = await connectDatabase();
+
   app.listen(PORT, () => {
     console.log(`Curalink backend listening on port ${PORT}`);
     console.log(`Curalink demo mode: ${DEMO_MODE ? "enabled" : "disabled"}`);
+    console.log(`Curalink persistence: ${dbConnected ? "mongodb" : "in-memory"}`);
   });
 }
 

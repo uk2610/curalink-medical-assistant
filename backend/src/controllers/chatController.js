@@ -1,9 +1,48 @@
 const Conversation = require("../models/Conversation");
+const { randomUUID } = require("crypto");
 const { retrieveAndRankEvidence } = require("../services/retrievalService");
 const { generateStructuredAnswer } = require("../services/llmService");
 const { buildConfidence, buildWhyThisAnswer, buildSuggestedQuestions } = require("../services/insightService");
 
+const inMemoryConversations = new Map();
+
+function isDbDisabled() {
+  return String(process.env.DISABLE_DB || "false").trim().toLowerCase() === "true";
+}
+
+function createInMemoryConversation(seed = {}) {
+  const conversation = {
+    _id: seed._id || randomUUID(),
+    patientName: seed.patientName || "",
+    diseaseContext: seed.diseaseContext || "",
+    locationContext: seed.locationContext || "",
+    intentContext: seed.intentContext || "",
+    messages: Array.isArray(seed.messages) ? seed.messages : [],
+    async save() {
+      inMemoryConversations.set(String(this._id), this);
+      return this;
+    }
+  };
+
+  return conversation;
+}
+
 async function resolveConversation(conversationId) {
+  if (isDbDisabled()) {
+    if (!conversationId) {
+      return createInMemoryConversation();
+    }
+
+    const inMemory = inMemoryConversations.get(String(conversationId));
+    if (!inMemory) {
+      const error = new Error("Conversation not found");
+      error.status = 404;
+      throw error;
+    }
+
+    return inMemory;
+  }
+
   if (!conversationId) {
     return new Conversation();
   }

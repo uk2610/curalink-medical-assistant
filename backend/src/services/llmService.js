@@ -2,7 +2,7 @@ const axios = require("axios");
 const { clip } = require("../utils/text");
 
 function isDemoMode() {
-  return String(process.env.DEMO_MODE || "false").toLowerCase() === "true";
+  return String(process.env.DEMO_MODE || "false").trim().toLowerCase() === "true";
 }
 
 function buildPrompt({ context, publications, trials, demoMode = false }) {
